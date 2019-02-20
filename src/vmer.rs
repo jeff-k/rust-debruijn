@@ -6,11 +6,11 @@ use std::cmp::{max, min};
 use std::fmt;
 use std::hash::Hash;
 
-use Kmer;
-use Vmer;
-use Mer;
-use kmer::{IntHelp, IntKmer};
 use bits_to_base;
+use kmer::{IntHelp, IntKmer};
+use Kmer;
+use Mer;
+use Vmer;
 
 fn block_set(kmer: u64, pos: usize, val: u8) -> u64 {
     let offset = (31 - pos) * 2;
@@ -34,7 +34,6 @@ pub type Lmer3 = Lmer<[u64; 3]>;
 pub struct Lmer<A: Array> {
     storage: A,
 }
-
 
 impl<A: Array<Item = u64> + Copy + Eq + Ord + Hash> Mer for Lmer<A> {
     /// The length of the DNA string
@@ -85,7 +84,6 @@ impl<A: Array<Item = u64> + Copy + Eq + Ord + Hash> Mer for Lmer<A> {
         }
     }
 
-
     fn rc(&self) -> Self {
         let slc = self.storage.as_slice();
 
@@ -112,7 +110,6 @@ impl<A: Array<Item = u64> + Copy + Eq + Ord + Hash> Mer for Lmer<A> {
     }
 }
 
-
 impl<A: Array<Item = u64> + Copy + Eq + Ord + Hash> Vmer for Lmer<A> {
     fn max_len() -> usize {
         (A::size() * 64 - 8) / 2
@@ -128,9 +125,7 @@ impl<A: Array<Item = u64> + Copy + Eq + Ord + Hash> Vmer for Lmer<A> {
             // Write the length into the last 8 bits
             slc[A::size() - 1] = (len as u64) & 0xff;
         }
-        Lmer {
-            storage: arr,
-        }
+        Lmer { storage: arr }
     }
 
     /// Get the kmer starting at position pos

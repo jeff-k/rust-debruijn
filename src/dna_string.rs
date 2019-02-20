@@ -25,18 +25,17 @@
 //! let first_kmer: Kmer16 = slice1.get_kmer(0);
 //! assert_eq!(first_kmer, Kmer16::from_ascii(b"CACGTATGACAGATAG"))
 
-
-use std::fmt;
 use std::borrow::Borrow;
+use std::fmt;
 
-use Kmer;
-use bits_to_base;
 use base_to_bits;
 use bits_to_ascii;
+use bits_to_base;
 use dna_only_base_to_bits;
 use std::cmp::min;
-use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use Kmer;
 
 use Mer;
 use MerIter;
@@ -85,8 +84,7 @@ impl Mer for DnaString {
     }
 }
 
-impl Vmer for DnaString
-{
+impl Vmer for DnaString {
     fn new(len: usize) -> Self {
         Self::empty(len)
     }
@@ -128,7 +126,6 @@ impl Vmer for DnaString
         kmer
     }
 }
-
 
 impl DnaString {
     /// Create an empty DNA string
@@ -194,7 +191,6 @@ impl DnaString {
         dna_vector
     }
 
-
     /// Create a DnaString from an ASCII ACGT-encoded byte slice.
     /// Non ACGT positions will be converted to 'A'
     pub fn from_acgt_bytes(bytes: &[u8]) -> DnaString {
@@ -214,14 +210,12 @@ impl DnaString {
     /// Non ACGT positions will be converted to repeatable random base determined
     /// by a hash of the read name and the position within the string.
     pub fn from_acgt_bytes_hashn(bytes: &[u8], read_name: &[u8]) -> DnaString {
-
         let mut hasher = DefaultHasher::new();
         read_name.hash(&mut hasher);
-        
+
         let mut dna_string = DnaString::empty(bytes.len());
 
         for (pos, c) in bytes.iter().enumerate() {
-
             let v = match c {
                 b'A' => 0u8,
                 b'C' => 1u8,
@@ -231,7 +225,7 @@ impl DnaString {
                     let mut hasher_clone = hasher.clone();
                     pos.hash(&mut hasher_clone);
                     (hasher_clone.finish() % 4) as u8
-                    },
+                }
             };
 
             dna_string.push(v);
@@ -406,7 +400,6 @@ impl DnaString {
     // }
 }
 
-
 impl fmt::Debug for DnaString {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
@@ -435,7 +428,6 @@ impl<'a> Iterator for DnaStringIter<'a> {
         } else {
             None
         }
-
     }
 }
 
@@ -448,7 +440,6 @@ impl<'a> IntoIterator for &'a DnaString {
     }
 }
 
-
 /// An immutable slice into a DnaString
 #[derive(Clone)]
 pub struct DnaStringSlice<'a> {
@@ -459,15 +450,19 @@ pub struct DnaStringSlice<'a> {
 }
 
 impl<'a> PartialEq for DnaStringSlice<'a> {
-    fn eq( &self, other: &DnaStringSlice ) -> bool {
-        if other.length != self.length { return false; }
+    fn eq(&self, other: &DnaStringSlice) -> bool {
+        if other.length != self.length {
+            return false;
+        }
         for i in 0..self.length {
-            if self.get(i) != other.get(i) { return false }
+            if self.get(i) != other.get(i) {
+                return false;
+            }
         }
         true
     }
 }
-impl<'a> Eq for DnaStringSlice<'a> { }
+impl<'a> Eq for DnaStringSlice<'a> {}
 
 impl<'a> Mer for DnaStringSlice<'a> {
     fn len(&self) -> usize {
@@ -505,8 +500,7 @@ impl<'a> Mer for DnaStringSlice<'a> {
     }
 }
 
-impl<'a> Vmer for DnaStringSlice<'a>
-{
+impl<'a> Vmer for DnaStringSlice<'a> {
     fn new(_: usize) -> Self {
         unimplemented!()
     }
@@ -521,8 +515,6 @@ impl<'a> Vmer for DnaStringSlice<'a>
         self.dna_string.get_kmer(self.start + pos)
     }
 }
-
-
 
 impl<'a> DnaStringSlice<'a> {
     pub fn is_palindrome(&self) -> bool {
@@ -566,9 +558,12 @@ impl<'a> DnaStringSlice<'a> {
 
         be
     }
-        /// Get slice containing the interval [`start`, `end`) of `self`
+    /// Get slice containing the interval [`start`, `end`) of `self`
     pub fn slice(&self, start: usize, end: usize) -> DnaStringSlice {
-        assert!(start <= self.length, "coordinate exceeds number of elements.");
+        assert!(
+            start <= self.length,
+            "coordinate exceeds number of elements."
+        );
         assert!(end <= self.length, "coordinate exceeds number of elements.");
 
         DnaStringSlice {
@@ -578,9 +573,7 @@ impl<'a> DnaStringSlice<'a> {
             is_rc: false,
         }
     }
-
 }
-
 
 impl<'a> fmt::Debug for DnaStringSlice<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -591,7 +584,11 @@ impl<'a> fmt::Debug for DnaStringSlice<'a> {
             }
             write!(f, "{}", s)
         } else {
-            write!(f, "start: {}, len: {}, is_rc: {}", self.start, self.length, self.is_rc)
+            write!(
+                f,
+                "start: {}, len: {}, is_rc: {}",
+                self.start, self.length, self.is_rc
+            )
         }
     }
 }
@@ -604,7 +601,6 @@ impl<'a> IntoIterator for &'a DnaStringSlice<'a> {
         self.iter()
     }
 }
-
 
 /// Container for many distinct sequences, concatenated into a single DnaString.  Each
 /// sequence is accessible by index as a DnaStringSlice.
@@ -648,7 +644,6 @@ impl<'a> PackedDnaStringSet {
         }
     }
 
-
     /// Number of sequences in the set
     pub fn len(&self) -> usize {
         self.start.len()
@@ -666,7 +661,6 @@ impl<'a> PackedDnaStringSet {
         self.length.push(length as u32);
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -763,7 +757,6 @@ mod tests {
         let values: Vec<u8> = suf_dna_string.iter().collect();
         assert_eq!(values, [0, 1, 1, 0]);
 
-
         // 000101000000 64+256
         let suf_dna_string = dna_string.suffix(6).to_owned();
         let values: Vec<u8> = suf_dna_string.iter().collect();
@@ -794,8 +787,8 @@ mod tests {
 
     #[test]
     fn test_kmers() {
-        let dna = "TGCATTAGAAAACTCCTTGCCTGTCAGCCCGACAGGTAGAAACTCATTAATCCACACATTGA".to_string() +
-            "CTCTATTTCAGGTAAATATGACGTCAACTCCTGCATGTTGAAGGCAGTGAGTGGCTGAAACAGCATCAAGGCGTGAAGGC";
+        let dna = "TGCATTAGAAAACTCCTTGCCTGTCAGCCCGACAGGTAGAAACTCATTAATCCACACATTGA".to_string()
+            + "CTCTATTTCAGGTAAATATGACGTCAACTCCTGCATGTTGAAGGCAGTGAGTGGCTGAAACAGCATCAAGGCGTGAAGGC";
         let dna_string = DnaString::from_dna_string(&dna);
 
         let kmers: Vec<IntKmer<u64>> = dna_string.iter_kmers().collect();
