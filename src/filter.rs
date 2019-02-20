@@ -13,6 +13,7 @@ use boomphf::hashmap::BoomHashMap2;
 use pdqsort;
 use std::fmt::Debug;
 use Dir;
+use Edge;
 use Exts;
 use Kmer;
 use Vmer;

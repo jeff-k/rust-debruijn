@@ -392,7 +392,7 @@ pub trait Vmer: Mer + PartialEq + Eq {
     }
 
     /// Iterate over the kmers and their extensions, given the extensions of the whole sequence
-    fn iter_kmer_exts<K: Kmer>(&self, seq_exts: Exts) -> KmerExtsIter<K, Self> {
+    fn iter_kmer_exts<K: Kmer>(&self, seq_exts: Exts) -> KmerExtsIter<K, Self, Exts> {
         let kmer = if self.len() >= K::k() {
             self.first_kmer()
         } else {
@@ -563,7 +563,36 @@ impl OctoExts {
     }
 }
 
-/// Store single-base extensions for a DNA Debruijn graph.
+pub trait Edge<B: Eq + PartialEq + Copy + Clone + Ord + PartialOrd + Hash> {
+    fn from_single_dirs(left: Self, right: Self) -> Self;
+    fn empty() -> Self;
+    fn merge(left: Self, right: Self) -> Self;
+    fn add(&self, v: Self) -> Self;
+    fn set(&self, dir: Dir, pos: B) -> Self;
+    fn dir_bits(&self, dir: Dir) -> B;
+    fn get(&self, dir: Dir) -> Vec<B>;
+    fn has_ext(&self, dir: Dir, base: B) -> bool;
+    fn from_slice_bounds(src: &[B], start: usize, length: usize) -> Self;
+    fn from_dna_string(src: &dna_string::DnaString, start: usize, length: usize) -> Self;
+    fn num_exts_l(&self) -> B;
+    fn num_exts_r(&self) -> B;
+    fn num_ext_dir(&self, dir: Dir) -> B;
+    fn mk_left(base: B) -> Self;
+    fn mk_right(base: B) -> Self;
+    fn mk(left_base: B, right_base: u8) -> Self;
+    fn get_unique_extension(&self, dir: Dir) -> Option<B>;
+    fn single_dir(&self, dir: Dir) -> Self;
+    fn complement(&self) -> Self;
+    fn reverse(&self) -> Self;
+    fn rc(&self) -> Self;
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub struct Exts {
+    pub val: u8,
+}
+
+/// Single base edges for DNA Debruijn graph.
 ///
 /// 8 bits, 4 higher order ones represent extensions to the right, 4 lower order ones
 /// represent extensions to the left. For each direction the bits (from lower order
@@ -571,39 +600,36 @@ impl OctoExts {
 /// letters A, C, G, T. So overall the bits are:
 ///  right   left
 /// T G C A T G C A
-#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct Exts {
-    pub val: u8,
-}
-
 impl Exts {
     pub fn new(val: u8) -> Self {
         Exts { val: val }
     }
+}
 
-    pub fn empty() -> Exts {
+impl Edge<u8> for Exts {
+    fn empty() -> Exts {
         Exts { val: 0u8 }
     }
 
-    pub fn from_single_dirs(left: Exts, right: Exts) -> Exts {
+    fn from_single_dirs(left: Exts, right: Exts) -> Exts {
         Exts {
             val: (right.val << 4) | (left.val & 0xf),
         }
     }
 
-    pub fn merge(left: Exts, right: Exts) -> Exts {
+    fn merge(left: Exts, right: Exts) -> Exts {
         Exts {
             val: left.val & 0x0f | right.val & 0xf0,
         }
     }
 
-    pub fn add(&self, v: Exts) -> Exts {
+    fn add(&self, v: Exts) -> Exts {
         Exts {
             val: self.val | v.val,
         }
     }
 
-    pub fn set(&self, dir: Dir, pos: u8) -> Exts {
+    fn set(&self, dir: Dir, pos: u8) -> Exts {
         let shift = pos
             + match dir {
                 Dir::Right => 4,
@@ -622,7 +648,7 @@ impl Exts {
         }
     }
 
-    pub fn get(&self, dir: Dir) -> Vec<u8> {
+    fn get(&self, dir: Dir) -> Vec<u8> {
         let bits = self.dir_bits(dir);
         let mut v = Vec::new();
         for i in 0..4 {
@@ -634,12 +660,12 @@ impl Exts {
         v
     }
 
-    pub fn has_ext(&self, dir: Dir, base: u8) -> bool {
+    fn has_ext(&self, dir: Dir, base: u8) -> bool {
         let bits = self.dir_bits(dir);
         (bits & (1 << base)) > 0
     }
 
-    pub fn from_slice_bounds(src: &[u8], start: usize, length: usize) -> Exts {
+    fn from_slice_bounds(src: &[u8], start: usize, length: usize) -> Exts {
         let l_extend = if start > 0 {
             1u8 << (src[start - 1])
         } else {
@@ -656,7 +682,7 @@ impl Exts {
         }
     }
 
-    pub fn from_dna_string(src: &dna_string::DnaString, start: usize, length: usize) -> Exts {
+    fn from_dna_string(src: &dna_string::DnaString, start: usize, length: usize) -> Exts {
         let l_extend = if start > 0 {
             1u8 << (src.get(start - 1))
         } else {
@@ -673,32 +699,32 @@ impl Exts {
         }
     }
 
-    pub fn num_exts_l(&self) -> u8 {
+    fn num_exts_l(&self) -> u8 {
         self.num_ext_dir(Dir::Left)
     }
 
-    pub fn num_exts_r(&self) -> u8 {
+    fn num_exts_r(&self) -> u8 {
         self.num_ext_dir(Dir::Right)
     }
 
-    pub fn num_ext_dir(&self, dir: Dir) -> u8 {
+    fn num_ext_dir(&self, dir: Dir) -> u8 {
         let e = self.dir_bits(dir);
         ((e & 1u8) >> 0) + ((e & 2u8) >> 1) + ((e & 4u8) >> 2) + ((e & 8u8) >> 3)
     }
 
-    pub fn mk_left(base: u8) -> Exts {
+    fn mk_left(base: u8) -> Exts {
         Exts::empty().set(Dir::Left, base)
     }
 
-    pub fn mk_right(base: u8) -> Exts {
+    fn mk_right(base: u8) -> Exts {
         Exts::empty().set(Dir::Right, base)
     }
 
-    pub fn mk(left_base: u8, right_base: u8) -> Exts {
+    fn mk(left_base: u8, right_base: u8) -> Exts {
         Exts::merge(Exts::mk_left(left_base), Exts::mk_right(right_base))
     }
 
-    pub fn get_unique_extension(&self, dir: Dir) -> Option<u8> {
+    fn get_unique_extension(&self, dir: Dir) -> Option<u8> {
         if self.num_ext_dir(dir) != 1 {
             None
         } else {
@@ -713,7 +739,7 @@ impl Exts {
         }
     }
 
-    pub fn single_dir(&self, dir: Dir) -> Exts {
+    fn single_dir(&self, dir: Dir) -> Exts {
         match dir {
             Dir::Right => Exts { val: self.val >> 4 },
             Dir::Left => Exts {
@@ -723,7 +749,7 @@ impl Exts {
     }
 
     /// Complement the extension bases for each direction
-    pub fn complement(&self) -> Exts {
+    fn complement(&self) -> Exts {
         let v = self.val;
 
         // swap bits
@@ -734,13 +760,13 @@ impl Exts {
         Exts { val: r }
     }
 
-    pub fn reverse(&self) -> Exts {
+    fn reverse(&self) -> Exts {
         let v = self.val;
         let r = (v & 0xf) << 4 | (v >> 4);
         Exts { val: r }
     }
 
-    pub fn rc(&self) -> Exts {
+    fn rc(&self) -> Exts {
         self.reverse().complement()
     }
 }
@@ -792,17 +818,17 @@ impl<'a, K: Kmer, D: Mer> Iterator for KmerIter<'a, K, D> {
 }
 
 /// Iterate over the `(Kmer, Exts)` tuples of a sequence and it's extensions efficiently
-pub struct KmerExtsIter<'a, K: Kmer, D>
+pub struct KmerExtsIter<'a, K: Kmer, D, E: Edge<u8>>
 where
     D: 'a,
 {
     bases: &'a D,
-    exts: Exts,
+    exts: E,
     kmer: K,
     pos: usize,
 }
 
-impl<'a, K: Kmer, D: Mer> Iterator for KmerExtsIter<'a, K, D> {
+impl<'a, K: Kmer, D: Mer> Iterator for KmerExtsIter<'a, K, D, Exts> {
     type Item = (K, Exts);
 
     fn next(&mut self) -> Option<(K, Exts)> {

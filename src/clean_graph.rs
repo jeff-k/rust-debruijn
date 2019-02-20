@@ -4,6 +4,7 @@
 use graph::{DebruijnGraph, Node};
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use Edge;
 use Kmer;
 
 pub struct CleanGraph<K: Kmer, D, T1>

@@ -10,6 +10,7 @@ use boomphf::hashmap::BoomHashMap2;
 use dna_string::DnaString;
 use graph::{BaseGraph, DebruijnGraph};
 use Dir;
+use Edge;
 use Exts;
 use Kmer;
 use Vmer;

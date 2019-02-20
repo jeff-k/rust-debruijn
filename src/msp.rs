@@ -9,6 +9,7 @@ use std::cmp::min;
 use std::iter::Iterator;
 use std::ops::Range;
 use DnaSlice;
+use Edge;
 use Exts;
 use Kmer;
 use Vmer;

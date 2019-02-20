@@ -28,6 +28,7 @@ type SmallVec8<T> = SmallVec<[T; 8]>;
 
 use dna_string::{DnaString, DnaStringSlice, PackedDnaStringSet};
 use Dir;
+use Edge;
 use Exts;
 use Kmer;
 use Mer;
