@@ -552,6 +552,24 @@ impl Dir {
     }
 }
 
+/// Pack eight sets of Exts into a u64 for each colour
+///
+/// A minimally invasive proof-of-concept for rust-debruijn.
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub struct OctoExts {
+    pub val: u64,
+}
+
+impl OctoExts {
+    pub fn new(_edges: u8, _colours: u8) -> Self {
+        OctoExts { val: 0 }
+    }
+
+    pub fn empty() -> OctoExts {
+        OctoExts { val: 0 }
+    }
+}
+
 
 /// Store single-base extensions for a DNA Debruijn graph.
 ///
