@@ -34,8 +34,8 @@ use Mer;
 use Vmer;
 
 /// A compressed DeBruijn graph carrying auxiliary data on each node of type `D`.
-/// This type does not carry the sorted index arrays the allow the graph
-/// to be walked efficiently. The `DeBruijnGraph` type wraps this type and add those
+/// This type does not carry the sorted index arrays that allow the graph
+/// to be walked efficiently. The `DeBruijnGraph` type wraps this type and adds those
 /// vectors.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BaseGraph<K, D> {
@@ -218,7 +218,7 @@ impl<K: Kmer, D: Debug> DebruijnGraph<K, D> {
     }
 
     /// Seach for the kmer `kmer`, appearing at the given `side` of a node sequence.
-    fn search_kmer(&self, kmer: K, side: Dir) -> Option<usize> {
+    pub fn search_kmer(&self, kmer: K, side: Dir) -> Option<usize> {
         match side {
             Dir::Left => match self.left_order.get(&kmer) {
                 Some(pos) => Some(*pos as usize),
