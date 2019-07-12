@@ -46,6 +46,9 @@ pub struct BaseGraph<K, D> {
     phantom: PhantomData<K>,
 }
 
+impl<K, D> Graph<K, D> {
+    pub fn new
+
 impl<K, D> BaseGraph<K, D> {
     pub fn new(stranded: bool) -> Self {
         BaseGraph {
@@ -229,6 +232,20 @@ impl<K: Kmer, D: Debug> DebruijnGraph<K, D> {
                 _ => None,
             },
         }
+    }
+
+    pub fn subgraph(&self, start: K, end: L) -> Option<Vec<(usize)> {
+        let mut subg: petgraph::Graph<> = petgraph::Graph::new();
+        let mut node = self.graph.search_kmer(start, Dir::Right);
+        let mut stack: Vec<usize> = vec![];
+        while node != self.graph.search_kmer(end, Dir::Left) {
+            node = stack.pop();
+            for ext in node.exts() {
+                stack.push(ext);
+            }
+            subg.add(petgraph::Node(node.data());
+        }
+        g
     }
 
     /// Find a link in the graph, possibly handling a RC switch.
